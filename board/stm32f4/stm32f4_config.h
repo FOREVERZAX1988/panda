@@ -68,6 +68,7 @@
 
 // unused
 void spi_init(void) {};
+uint16_t spi_error_count = 0U;
 uint16_t sound_output_level = 0U;
 void sound_tick(void) {};
 void can_tx_comms_resume_spi(void) {};
