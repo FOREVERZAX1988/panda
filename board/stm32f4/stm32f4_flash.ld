@@ -34,6 +34,9 @@ ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
 enter_bootloader_mode = 0x2001FFFC;
+/* NMI/hardfault cookie lives in CCM RAM (persists across reset, unused by
+ * any section or the stack; upstream only reserved it for H7 with #2424) */
+fault_cookie = 0x10003FFC;
 _estack = 0x2001FFFC;    /* end of 128K RAM on AHB bus*/
 _app_start = 0x08004000; /* Reserve Sector 0(16K) for bootloader */
 
