@@ -294,7 +294,9 @@ class Panda:
     return isinstance(self._handle, PandaSpiHandle)
 
   @classmethod
-  def spi_connect(cls, serial):
+  def spi_connect(cls, serial, ignore_version=False):
+    # ignore_version accepted for upstream API parity (spi_list passes it);
+    # this port never checks the firmware version during SPI discovery.
     try:
       handle = PandaSpiHandle()
       dat = handle.get_info()
