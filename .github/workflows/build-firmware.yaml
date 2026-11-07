@@ -13,6 +13,7 @@ on:
     branches: [master]
     paths:
       - 'board/**'
+      - 'SConscript'
       - '.github/workflows/build-firmware.yaml'
   workflow_dispatch:
 
