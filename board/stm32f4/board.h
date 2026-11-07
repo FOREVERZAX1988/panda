@@ -18,8 +18,15 @@ void detect_board_type(void) {
   set_gpio_output(GPIOC, 5, 1);
   if (!detect_with_pull(GPIOB, 1, PULL_UP) && !detect_with_pull(GPIOB, 7, PULL_UP)) {
     hw_type = HW_TYPE_DOS;
-    current_board = &board_dos;
+  } else {
+    // The GPIO straps on some DOS units (incl. domestic C3XL built-in pandas
+    // with non-standard strap resistors) are not reliably detected. Default
+    // to DOS instead of leaving HW_TYPE_UNKNOWN: main() assert_fatal()s on
+    // unknown board types BEFORE usb_init(), which kills USB enumeration
+    // entirely (write succeeds, jump lands, board never enumerates).
+    hw_type = HW_TYPE_DOS;
   }
+  current_board = &board_dos;
 
   // Return A13 to the alt mode to fix SWD
   set_gpio_alternate(GPIOA, 13, GPIO_AF0_SWJ);
