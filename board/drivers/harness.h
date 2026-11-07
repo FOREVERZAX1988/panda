@@ -80,7 +80,8 @@ static uint8_t harness_detect_orientation(void) {
     harness.sbu2_voltage_mV = adc_get_mV(&current_board->harness_config->adc_signal_SBU2);
     uint16_t detection_threshold = current_board->avdd_mV / 2U;
 
-    // ADC_SM_4: SBU1 is on ADC1 and ADC2
+    #ifdef STM32H7
+    // ADC_SM_4: SBU1 is on ADC1 and ADC2 (F4 has no ADC2 support in lladc, skip cross-check)
     if (!adc2_busy) {
       adc_signal_t sbu1_adc2 = current_board->harness_config->adc_signal_SBU1;
       sbu1_adc2.adc = ADC2;
@@ -90,6 +91,7 @@ static uint8_t harness_detect_orientation(void) {
       #endif
       adc_mismatches = (ABS((int32_t)harness.sbu1_voltage_mV - (int32_t)sbu1_adc2_mV) <= 100) ? 0U : (adc_mismatches + 1U);
     }
+    #endif
 
     // Detect connection and orientation
     if((harness.sbu1_voltage_mV < detection_threshold) || (harness.sbu2_voltage_mV < detection_threshold)){
@@ -113,9 +115,14 @@ static uint8_t harness_detect_orientation(void) {
   #endif
 
   // after the ADC lock, the safe state drives the relay
+  #ifdef STM32H7
   if (adc_mismatches >= 8U) {
     fault_occurred_value(FAULT_ADC, ((uint32_t)harness.sbu1_voltage_mV << 16) | sbu1_adc2_mV);
   }
+  #else
+  UNUSED(adc_mismatches);
+  UNUSED(sbu1_adc2_mV);
+  #endif
 
   return ret;
 }

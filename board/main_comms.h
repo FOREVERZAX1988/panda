@@ -340,6 +340,9 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       }
       break;
     // **** 0xf5: break a read-back or cross-check, for testing
+    // (H7 self-test suite targets: ADC3_COMMON, APB1LENR and FDCAN_IE_TCFE
+    // don't exist on F4; the F4 self-test suite is a no-op anyway)
+    #ifdef STM32H7
     case 0xf5:
       if (req->param1 == 0U) {
         relay_readback_inject = true;
@@ -364,6 +367,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       } else {
       }
       break;
+    #endif  // STM32H7
     #endif
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:

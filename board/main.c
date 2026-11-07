@@ -311,12 +311,6 @@ int main(void) {
   led_set(LED_RED, true);
   led_set(LED_GREEN, true);
   adc_init(ADC1);
-  #ifndef STM32H7
-  // H7 enables ADC2 lazily in adc_check(); the harness SBU1 cross-check reads
-  // it on every detection pass, so bring it up here (F4 ADC1/2 share the GPIO
-  // input channels)
-  adc_init(ADC2);
-  #endif
 
   // print hello
   print("\n\n\n************************ MAIN START ************************\n");
