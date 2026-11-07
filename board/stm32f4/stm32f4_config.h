@@ -55,6 +55,7 @@
 
 #if !defined(BOOTSTUB)
   #include "board/drivers/debug.h"
+  #include "board/stm32f4/llmpu.h"
 #endif
 
 #ifdef BOOTSTUB

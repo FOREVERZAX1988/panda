@@ -32,3 +32,12 @@ void clock_init(void) {
 
   // *** running on PLL ***
 }
+
+// Clock divergence detection is H7-only (see board/stm32h7/clock.h: it watches
+// the HSI/LSE backup clocks via the H7 RCC). The F4 (dos) target keeps the
+// shared main.c call surface as no-ops.
+void clock_check_init(void) {
+}
+
+void clock_check(void) {
+}

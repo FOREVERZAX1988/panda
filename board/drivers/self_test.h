@@ -1,5 +1,16 @@
 #pragma once
 
+#ifdef STM32F4
+// The self-test suite is H7-only: it needs the self_test.s CPU/FPU assembly,
+// the RAMECC monitors, the DTCM/AXI SRAM linker regions and the H7 flash CRC
+// layout (see board/stm32h7/self_test.h and self_test.s). The F4 (dos) target
+// keeps the shared main.c / main_comms.h call surface as no-ops.
+static inline void self_test_init(void) {}
+static inline void self_test_tick(void) {}
+// non-static: main_comms.h declares this before this header is included
+void self_test_inject(uint8_t test) { UNUSED(test); }
+#else
+
 #include "board/crc.h"
 
 // UM2331 CPU_SM_0, RAM_SM_0/7/8, FLASH_SM_0/7/9
@@ -375,3 +386,5 @@ void self_test_tick(void) {
     fault_occurred_value(FAULT_DMA, dma_err);
   }
 }
+
+#endif  // STM32F4

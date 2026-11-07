@@ -29,3 +29,15 @@ static uint16_t adc_get_raw(const adc_signal_t *signal) {
 uint16_t adc_get_mV(const adc_signal_t *signal) {
   return (adc_get_raw(signal) * current_board->avdd_mV) / 4095U;
 }
+
+// F4: ADC2 shares the GPIO input channels with ADC1 and there is no DMA
+// occupancy, so the H7 "adc2 busy" gate (see board/stm32h7/lladc.h) is always
+// false here.
+static volatile bool adc2_busy = false;
+
+// AVDD drift detection is H7-only (see board/stm32h7/lladc.h: it monitors the
+// H7 VREFINT channel). The F4 (dos) target keeps the shared main.c call
+// surface as a no-op.
+void adc_check(uint32_t expected_avdd_mV) {
+  UNUSED(expected_avdd_mV);
+}
