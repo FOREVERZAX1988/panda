@@ -39,14 +39,23 @@ void detect_board_type(void) {
     hw_type = HW_TYPE_RED_PANDA;
     current_board = &board_red;
   } else if (id1 == 1U) {
-    // deprecated
-    //hw_type = HW_TYPE_RED_PANDA_V2;
-    hw_type = HW_TYPE_UNKNOWN;
+    // deprecated RED_PANDA_V2 straps; on clone hardware (domestic C3XL
+    // built-in pandas) these pins float to this combination. Default to
+    // tres instead of UNKNOWN - see the fallback comment below
+    hw_type = HW_TYPE_TRES;
+    current_board = &board_tres;
   } else if (id1 == 2U) {
     hw_type = HW_TYPE_TRES;
     current_board = &board_tres;
   } else {
-    hw_type = HW_TYPE_UNKNOWN;
-    print("Hardware type is UNKNOWN!\n");
+    // Domestic C3XL built-in pandas have non-standard ID pin straps that
+    // match no known combination. Leaving hw_type at UNKNOWN makes main()
+    // assert_fatal() BEFORE usb_init(), so the app never enumerates at all
+    // (flash + jump succeed, board goes USB-silent). Default to tres - the
+    // comma 3X internal panda this hardware clones - so the app boots and
+    // enumerates (same approach as the F4 dos fallback).
+    hw_type = HW_TYPE_TRES;
+    current_board = &board_tres;
+    print("Hardware type is UNKNOWN, defaulting to TRES!\n");
   }
 }
