@@ -371,7 +371,13 @@ class Panda:
   def list(cls, usb_only: bool = False):
     ret = []
     if not usb_only:
-      ret += cls.spi_list()
+      try:
+        ret += cls.spi_list()
+      except PandaSpiException:
+        # an SPI panda whose bootstub/app is broken or speaks an incompatible
+        # protocol must not break USB enumeration; pandad recovers it through
+        # the SPI ROM bootloader
+        pass
     ret += cls.usb_list()
     return list(dict.fromkeys(ret))
 
