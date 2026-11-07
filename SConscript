@@ -117,11 +117,11 @@ def build_project(project_name, project, main, extra_flags):
   bs_env.Objcopy(f"./board/obj/bootstub.{project_name}.bin", bs_elf)
 
   # Build + sign main (aka app)
-  main_elf = env.Program(f"{project_dir}/main.elf", [
-    startup,
-    env.Object("./board/stm32h7/self_test.s"),
-    main
-  ], LINKFLAGS=[f"-Wl,--section-start,.isr_vector={project['APP_START_ADDRESS']}"] + flags)
+  main_sources = [startup, main]
+  self_test_file = project.get("SELF_TEST_FILE")
+  if self_test_file:
+    main_sources.insert(1, env.Object(self_test_file))
+  main_elf = env.Program(f"{project_dir}/main.elf", main_sources, LINKFLAGS=[f"-Wl,--section-start,.isr_vector={project['APP_START_ADDRESS']}"] + flags)
   main_bin = env.Objcopy(f"{project_dir}/main.bin", main_elf)
   sign_py = File(f"./board/crypto/sign.py").srcnode().relpath
   env.Command(f"./board/obj/{project_name}.bin.signed", main_bin, f"SETLEN=1 {sign_py} $SOURCE $TARGET {cert_fn}")
@@ -146,6 +146,9 @@ base_project_h7 = {
   "STARTUP_FILE": "./board/stm32h7/startup_stm32h7x5xx.s",
   "LINKER_SCRIPT": "./board/stm32h7/stm32h7x5_flash.ld",
   "APP_START_ADDRESS": "0x8020000",
+  # the H7 self-test suite is asm and pokes H7 linker symbols; the F4
+  # self-test is a C no-op (board/drivers/self_test.h) and needs no object
+  "SELF_TEST_FILE": "./board/stm32h7/self_test.s",
   "FLAGS": [
     "-mcpu=cortex-m7",
     "-mhard-float",
