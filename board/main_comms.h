@@ -329,8 +329,11 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         // the tick handler runs without its flag
         NVIC_SetPendingIRQ(TICK_TIMER_IRQ);
       } else if (req->param1 == 3U) {
-        // halves the counts per LSI capture
+        // halves the counts per LSI capture (TIM16 is H7-only; the LSI clock
+        // check it feeds is an H7 feature)
+        #ifdef STM32H7
         register_set(&(TIM16->PSC), 1U, 0xFFFFU);
+        #endif
       } else if (req->param1 == 4U) {
         // an unused IRQ, outside nvic_enable
         NVIC_EnableIRQ(WWDG_IRQn);
