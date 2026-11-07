@@ -308,10 +308,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       controls_allowed = !controls_allowed;
       break;
     // **** 0xf0: run the stack into its MPU guard, for testing
+    // (_stack_guard is an H7 linker-script symbol; F4 has no MPU stack guard region)
+    #ifdef STM32H7
     case 0xf0:
       __set_MSP((uint32_t)&_stack_guard + 32U);
       stack_guard_hit();
       break;
+    #endif
     // **** 0xed: inject self-test failure, for testing
     case 0xed:
       self_test_inject((uint8_t)req->param1);
