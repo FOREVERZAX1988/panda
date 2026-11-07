@@ -10,3 +10,11 @@ void mpu_safety_open(void) {
 
 void mpu_safety_close(void) {
 }
+
+// mpu_init/mpu_check maintain the H7 MPU firewall regions; F4 (dos) has no
+// MPU firewall setup, keep the shared main.c call surface as no-ops.
+void mpu_init(void) {
+}
+
+void mpu_check(void) {
+}

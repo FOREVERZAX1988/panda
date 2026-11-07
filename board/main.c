@@ -262,7 +262,9 @@ static void tick_handler(void) {
       clock_check();
       interrupt_timer_check();
       nvic_check();
+      #ifdef STM32H7
       check_option_bytes();
+      #endif
 
       // set ignition_can to false after 2s of no CAN seen
       if (ignition_can_cnt > 2U) {
