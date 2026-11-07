@@ -37,6 +37,11 @@ enter_bootloader_mode = 0x2001FFFC;
 /* NMI/hardfault cookie lives in CCM RAM (persists across reset, unused by
  * any section or the stack; upstream only reserved it for H7 with #2424) */
 fault_cookie = 0x10003FFC;
+/* fault telemetry scratch (matches the H7 layout; unused sections, kept
+ * out of the stack and every MEMORY area) */
+fault_cfsr = 0x10003FF4;
+fault_addr = 0x10003FF0;
+fault_pc = 0x10003FEC;
 _estack = 0x2001FFFC;    /* end of 128K RAM on AHB bus*/
 _app_start = 0x08004000; /* Reserve Sector 0(16K) for bootloader */
 

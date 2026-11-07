@@ -75,12 +75,15 @@ void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
 }
 
 #ifdef ALLOW_DEBUG
+#ifdef STM32H7
+// only the 0xf0 inject (H7-only) calls this; F4 would warn unused
 static void __attribute__((noinline)) stack_guard_hit(void) {
   volatile uint32_t frame[4];
   frame[0] = 0U;
   UNUSED(frame);
 }
-#endif
+#endif  // STM32H7
+#endif  // ALLOW_DEBUG
 
 int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;
