@@ -25,7 +25,8 @@
     - name: install toolchain
       script: |
         if [ -f .skip_firmware_build ]; then echo "skip: firmware CI commit"; exit 0; fi
-        sed -i 's|http://archive.ubuntu.com|https://mirrors.cloud.tencent.com|g; s|http://security.ubuntu.com|https://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/ubuntu.sources
+        # 裸 ubuntu 无 ca-certificates，HTTPS 镜像源握手会失败，用 http
+        sed -i 's|http://archive.ubuntu.com|http://mirrors.cloud.tencent.com|g; s|http://security.ubuntu.com|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/ubuntu.sources
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
           ca-certificates git gcc-arm-none-eabi binutils-arm-none-eabi \
