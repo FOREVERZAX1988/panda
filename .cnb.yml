@@ -72,8 +72,7 @@
         fi
 
 master:
-  push:
-    - *build-firmware
+  # 仅手动触发：分支详情页按钮（.cnb/web_trigger.yml）
   web_trigger_build_firmware:
     - *build-firmware
   # API 触发（cnb build start-build --event api_trigger_build_firmware）
