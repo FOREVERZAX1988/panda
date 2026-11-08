@@ -21,6 +21,7 @@
     - name: skip firmware-only CI commits
       script: |
         git log -1 --pretty=%s | grep -q "update prebuilt firmware from CI" && touch .skip_firmware_build || true
+        echo "marker: $(ls .skip_firmware_build 2>/dev/null || echo none)"
     - name: install toolchain
       script: |
         if [ -f .skip_firmware_build ]; then echo "skip: firmware CI commit"; exit 0; fi
@@ -69,4 +70,7 @@ master:
   push:
     - *build-firmware
   web_trigger_build_firmware:
+    - *build-firmware
+  # API 触发（cnb build start-build --event api_trigger_build_firmware）
+  api_trigger_build_firmware:
     - *build-firmware
