@@ -1,0 +1,72 @@
+# 云原生构建配置，对应原 GitHub Actions .github/workflows/build-firmware.yaml
+#
+# 构建 panda 固件（F4 dos + H7）并把签名二进制提交回 board/obj
+# （gitignore 目录、force-add），主仓按子仓内容原样打包，pandad 的
+# 防砖逻辑依赖这些文件给卡在 bootstub 的 panda 刷机。固件落库后由
+# 主仓的 sync-panda-firmware 流程提升子仓指针。
+#
+# 防循环：固件 CI 提交的 message 带 "[skip ci]"，流水线第一条 stage
+# 识别后置 .skip_firmware_build 标记，后续 stage 全部空转。
+
+.build-firmware: &build-firmware
+  name: build-firmware
+  runner:
+    cpus: 8
+  docker:
+    image: ubuntu:24.04
+  endStages:
+    - name: cleanup
+      script: rm -f .skip_firmware_build
+  stages:
+    - name: skip firmware-only CI commits
+      script: |
+        git log -1 --pretty=%s | grep -q "update prebuilt firmware from CI" && touch .skip_firmware_build || true
+    - name: install toolchain
+      script: |
+        if [ -f .skip_firmware_build ]; then echo "skip: firmware CI commit"; exit 0; fi
+        sed -i 's|http://archive.ubuntu.com|https://mirrors.cloud.tencent.com|g; s|http://security.ubuntu.com|https://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/ubuntu.sources
+        apt-get update
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          ca-certificates git gcc-arm-none-eabi binutils-arm-none-eabi \
+          libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib python3 python3-pip
+        arm-none-eabi-gcc --version | head -1
+    - name: install scons
+      script: |
+        if [ -f .skip_firmware_build ]; then exit 0; fi
+        python3 -m pip config set global.index-url https://mirrors.cloud.tencent.com/pypi/simple --break-system-packages
+        python3 -m pip install --break-system-packages scons
+    - name: checkout opendbc (can.h for firmware hashing)
+      script: |
+        if [ -f .skip_firmware_build ]; then exit 0; fi
+        git clone --depth 1 https://cnb.cool/mouxancnb/opendbc.git opendbc
+    - name: build debug firmware (F4 + H7)
+      script: |
+        if [ -f .skip_firmware_build ]; then exit 0; fi
+        PYTHONPATH=$PWD/opendbc scons -j$(nproc)
+        ls -la board/obj/
+    - name: build release-type firmware (debug cert, RELEASE flag)
+      script: |
+        if [ -f .skip_firmware_build ]; then exit 0; fi
+        rm -f board/obj/panda.bin.signed board/obj/panda_h7.bin.signed
+        PYTHONPATH=$PWD/opendbc CERT=board/crypto/certs/debug RELEASE=1 scons -j$(nproc)
+        ls -la board/obj/
+    - name: commit firmware into board/obj
+      script: |
+        if [ -f .skip_firmware_build ]; then exit 0; fi
+        git config --global --add safe.directory "$PWD"
+        git config user.name "cnb-build[bot]"
+        git config user.email "cnb-build[bot]@cnb.cool"
+        git add -f board/obj/panda.bin.signed board/obj/panda_h7.bin.signed \
+                  board/obj/bootstub.panda.bin board/obj/bootstub.panda_h7.bin
+        if git diff --cached --quiet; then
+          echo "firmware unchanged, nothing to commit"
+        else
+          git commit -m "board: update prebuilt firmware from CI [skip ci]"
+          git push "https://${CNB_TOKEN_USER_NAME}:${CNB_TOKEN}@cnb.cool/mouxancnb/panda.git" HEAD:master
+        fi
+
+master:
+  push:
+    - *build-firmware
+  web_trigger_build_firmware:
+    - *build-firmware

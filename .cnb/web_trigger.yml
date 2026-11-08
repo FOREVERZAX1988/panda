@@ -1,0 +1,7 @@
+branch:
+  - reg: ^master$
+buttons:
+  - name: 构建 panda 固件
+    description: 手动运行 build-firmware 流水线（F4 + H7）
+    event: web_trigger_build_firmware
+    isDefault: true
