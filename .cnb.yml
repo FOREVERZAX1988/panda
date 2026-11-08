@@ -13,7 +13,10 @@
   runner:
     cpus: 8
   docker:
-    image: ubuntu:24.04
+    # python:3.11（bookworm）自带 python/pip 且 tzdata 已预配置——裸 ubuntu 里
+    # /etc/localtime 被宿主机 bind-mount，apt 装 tzdata 的 postinst 会报
+    # "Device or resource busy" 直接失败
+    image: python:3.11
   endStages:
     - name: cleanup
       script: rm -f .skip_firmware_build
@@ -25,18 +28,19 @@
     - name: install toolchain
       script: |
         if [ -f .skip_firmware_build ]; then echo "skip: firmware CI commit"; exit 0; fi
-        # 裸 ubuntu 无 ca-certificates，HTTPS 镜像源握手会失败，用 http
-        sed -i 's|http://archive.ubuntu.com|http://mirrors.cloud.tencent.com|g; s|http://security.ubuntu.com|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/ubuntu.sources
+        # python:3.11（bookworm）已带 ca-certificates，Debian 源换腾讯 http 镜像
+        sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com/debian|g' /etc/apt/sources.list.d/debian.sources
         apt-get update
+        # python 镜像无 ca-certificates 外的编译器，apt 装 ARM 工具链即可
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
           ca-certificates git gcc-arm-none-eabi binutils-arm-none-eabi \
-          libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib python3 python3-pip
+          libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
         arm-none-eabi-gcc --version | head -1
     - name: install scons
       script: |
         if [ -f .skip_firmware_build ]; then exit 0; fi
-        python3 -m pip config set global.index-url https://mirrors.cloud.tencent.com/pypi/simple --break-system-packages
-        python3 -m pip install --break-system-packages scons
+        pip config set global.index-url https://mirrors.cloud.tencent.com/pypi/simple
+        pip install scons
     - name: checkout opendbc (can.h for firmware hashing)
       script: |
         if [ -f .skip_firmware_build ]; then exit 0; fi
