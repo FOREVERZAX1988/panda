@@ -28,8 +28,8 @@
     - name: install toolchain
       script: |
         if [ -f .skip_firmware_build ]; then echo "skip: firmware CI commit"; exit 0; fi
-        # python:3.11（bookworm）已带 ca-certificates，Debian 源换腾讯 http 镜像
-        sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com/debian|g' /etc/apt/sources.list.d/debian.sources
+        # python:3.11 已是 Debian trixie 且自带 tzdata；源换腾讯镜像（保持路径，只换域名）
+        sed -i 's|deb.debian.org|mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources
         apt-get update
         # python 镜像无 ca-certificates 外的编译器，apt 装 ARM 工具链即可
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
