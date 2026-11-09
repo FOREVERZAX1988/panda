@@ -36,7 +36,14 @@ def get_version(builder, build_type):
     git = subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"], encoding='utf8').strip()
   except subprocess.CalledProcessError:
     git = "unknown"
-  return f"{builder}-{git}-{build_type}"
+  # ALLOW_DEBUG is not just a log switch: it decides whether toyota_secoc is
+  # assigned at all, whether SAFETY_ALLOUTPUT is registered, and whether the
+  # per-brand longitudinal gates are compiled in. Two firmware images can
+  # therefore report the same "DEV-<hash>-RELEASE" while behaving completely
+  # differently. Tag the tier so pandaState / get_version() can never be
+  # ambiguous about which one is actually flashed.
+  tier = "+D" if "-DALLOW_DEBUG" in common_flags else ""
+  return f"{builder}-{git}-{build_type}{tier}"
 
 def get_key_header(name):
   public_fn = File(f'./board/crypto/certs/{name}.pub').srcnode().get_path()
