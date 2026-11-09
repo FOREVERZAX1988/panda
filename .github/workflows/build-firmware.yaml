@@ -1,12 +1,12 @@
 name: build-firmware
 
-# Build panda firmware (F4 dos + H7) and commit the signed binaries back into
-# board/obj (gitignored dir, force-added) so every tree that tracks this repo
-# ships flash-ready firmware: the main openpilot repo packages submodule
-# contents verbatim, and pandad's brick guard needs these files to flash
-# pandas stuck in bootstub (e.g. F4 dos units flashed with H7 firmware by
-# other forks). After firmware lands here, bump the submodule pointer in the
-# main repo (sync-panda-firmware workflow).
+# Build panda firmware (F4 dos + H7) as a compile check and upload the signed
+# binaries as workflow artifacts (manual rescue firmware download). The binaries
+# are NOT committed back into board/obj anymore: on-device firmware is built by
+# the main repo's scons build (SConstruct includes panda/SConscript), carried
+# across updates by the updater, and the main repo's staged tree strips them
+# (gitignore-covered). A tracked copy can never stay byte-identical to that
+# rebuild and dirtied every staging sync with four conflicts.
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -65,16 +65,3 @@ jobs:
             board/obj/bootstub.panda.bin
             board/obj/bootstub.panda_h7.bin
           if-no-files-found: error
-
-      - name: Commit firmware into board/obj
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f board/obj/panda.bin.signed board/obj/panda_h7.bin.signed \
-                    board/obj/bootstub.panda.bin board/obj/bootstub.panda_h7.bin
-          if git diff --cached --quiet; then
-            echo "firmware unchanged, nothing to commit"
-          else
-            git commit -m "board: update prebuilt firmware from CI [skip ci]"
-            git push origin HEAD:master
-          fi
