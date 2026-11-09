@@ -7,25 +7,25 @@ import subprocess
 PREFIX = "arm-none-eabi-"
 BUILDER = "DEV"
 
-common_flags = []
+# ALLOW_DEBUG is required on EVERY firmware this fork builds, RELEASE included.
+# SecOC support is gated behind it in opendbc (safety/modes/toyota.h,
+# toyota_init only assigns toyota_secoc under `#ifdef ALLOW_DEBUG`). Dropping it
+# leaves toyota_secoc false even when the fingerprint asks for it (safetyParam
+# bit 0x800), and the car then fails silently in two ways:
+#   - rx checks fall back to the non-SecOC table, whose 0x1D2/0x226 do not exist
+#     on SecOC platforms -> safetyRxChecksInvalid permanently true (LKAS blocked
+#     via controlsMismatch / steerUnavailable)
+#   - tx_hook expects 0x2E4 with DLC 5 while SecOC sends 8 bytes -> every LKAS
+#     command is rejected (observed: 5996 rejected frames, Wildlander PHEV)
+common_flags = ["-DALLOW_DEBUG"]
 
-# Default build is RELEASE-type signed with the debug cert - byte-for-byte the
-# same configuration the CI ships in board/obj. Device-side boot builds (scons
-# with no env) run through here, and a DEBUG build flashed by pandad leaves
-# safetyRxChecksInvalid stuck on multi-panda Toyota setups (LKAS controls
-# mismatch, steering blocked - verified on a Wildlander PHEV on 2026-11-09).
-# Opt back into the DEBUG firmware explicitly with DEBUG_FW=1.
-if os.getenv("DEBUG_FW"):
-  BUILD_TYPE = "DEBUG"
-  cert_fn = File("./board/crypto/certs/debug").srcnode().relpath
-  common_flags += ["-DALLOW_DEBUG"]
-elif os.getenv("RELEASE"):
+if os.getenv("RELEASE"):
   BUILD_TYPE = "RELEASE"
   cert_fn = os.getenv("CERT")
   assert cert_fn is not None, 'No certificate file specified. Please set CERT env variable'
   assert os.path.exists(cert_fn), 'Certificate file not found. Please specify absolute path'
 else:
-  BUILD_TYPE = "RELEASE"
+  BUILD_TYPE = "DEBUG"
   cert_fn = File("./board/crypto/certs/debug").srcnode().relpath
 
 def objcopy(source, target, env, for_signature):
