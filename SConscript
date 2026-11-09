@@ -9,15 +9,24 @@ BUILDER = "DEV"
 
 common_flags = []
 
-if os.getenv("RELEASE"):
+# Default build is RELEASE-type signed with the debug cert - byte-for-byte the
+# same configuration the CI ships in board/obj. Device-side boot builds (scons
+# with no env) run through here, and a DEBUG build flashed by pandad leaves
+# safetyRxChecksInvalid stuck on multi-panda Toyota setups (LKAS controls
+# mismatch, steering blocked - verified on a Wildlander PHEV on 2026-11-09).
+# Opt back into the DEBUG firmware explicitly with DEBUG_FW=1.
+if os.getenv("DEBUG_FW"):
+  BUILD_TYPE = "DEBUG"
+  cert_fn = File("./board/crypto/certs/debug").srcnode().relpath
+  common_flags += ["-DALLOW_DEBUG"]
+elif os.getenv("RELEASE"):
   BUILD_TYPE = "RELEASE"
   cert_fn = os.getenv("CERT")
   assert cert_fn is not None, 'No certificate file specified. Please set CERT env variable'
   assert os.path.exists(cert_fn), 'Certificate file not found. Please specify absolute path'
 else:
-  BUILD_TYPE = "DEBUG"
+  BUILD_TYPE = "RELEASE"
   cert_fn = File("./board/crypto/certs/debug").srcnode().relpath
-  common_flags += ["-DALLOW_DEBUG"]
 
 def objcopy(source, target, env, for_signature):
     return '$OBJCOPY -O binary %s %s' % (source[0], target[0])
