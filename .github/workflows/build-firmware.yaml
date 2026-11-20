@@ -27,11 +27,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Checkout opendbc (can.h for firmware hashing)
-        uses: actions/checkout@v4
-        with:
-          repository: FOREVERZAX1988/opendbc
-          path: opendbc
+      - name: Checkout opendbc (can.h hash + safety declarations the board reads)
+        run: |
+          # The board's llmpu.h reads SafetyCopy / current_copy from
+          # opendbc/safety/declarations.h, introduced by "safety: redundant
+          # config". A fork that predates it cannot compile this board, so
+          # take the exact commit this tree was built and driven against.
+          git init opendbc
+          cd opendbc
+          git remote add origin https://cnb.cool/mouxancnb/opendbc.git
+          git fetch --depth 1 origin 3b1aec3a54a6fc89ba902c7ed48850846fda3e73
+          git checkout --detach FETCH_HEAD
+          ls opendbc/safety/declarations.h
 
       - name: Install toolchain
         run: |
