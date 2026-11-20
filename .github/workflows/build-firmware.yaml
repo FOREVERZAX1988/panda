@@ -30,7 +30,7 @@ jobs:
       - name: Checkout opendbc (can.h for firmware hashing)
         uses: actions/checkout@v4
         with:
-          repository: mouxangithub/opendbc
+          repository: FOREVERZAX1988/opendbc
           path: opendbc
 
       - name: Install toolchain
